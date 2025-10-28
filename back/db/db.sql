@@ -1,86 +1,62 @@
--- Crear la base de datos
-CREATE DATABASE taskly;
-
--- Seleccionar la base de datos
-USE taskly;
-
--- Crear la tabla de usuarios
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
-);
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  card_number VARCHAR(20) UNIQUE NOT NULL,
+  full_name VARCHAR(100) NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  user_type ENUM('normal', 'subsidiado', 'operador', 'bicicleta', 'parqueadero') NOT NULL,
+  balance DECIMAL(10, 2) DEFAULT 0.00,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) AUTO_INCREMENT=1000;
 
--- Crear la tabla de proyectos (temas)
-CREATE TABLE topics (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    todo_count INT DEFAULT 0,
-    done_count INT DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Crear la tabla de tareas
-CREATE TABLE tasks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    topics_id INT,
-    title VARCHAR(255) NOT NULL,
-    priority TINYINT NOT NULL,  -- 1 = low, 2 = medium, 3 = high
-    status TINYINT NOT NULL,    -- 0 = todo, 1 = done
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (topics_id) REFERENCES topics(id) ON DELETE CASCADE
-);
-
--- TRIGGER: Al insertar una tarea
+-- Trigger para generar automáticamente el card_number basado en el ID
 DELIMITER $$
-CREATE TRIGGER trg_after_insert_task
-AFTER INSERT ON tasks
+CREATE TRIGGER generate_card_number
+BEFORE INSERT ON users
 FOR EACH ROW
 BEGIN
-    IF NEW.status = 0 THEN
-        UPDATE topics SET todo_count = todo_count + 1 WHERE id = NEW.topics_id;
-    ELSE
-        UPDATE topics SET done_count = done_count + 1 WHERE id = NEW.topics_id;
-    END IF;
+  IF NEW.card_number IS NULL THEN
+    -- Se generará después del INSERT, en el trigger AFTER
+    SET NEW.card_number = 'TEMP';
+  END IF;
+END$$
+
+CREATE TRIGGER update_card_number
+AFTER INSERT ON users
+FOR EACH ROW
+BEGIN
+  UPDATE users
+  SET card_number = CONCAT('1000', LPAD(NEW.id, 6, '0'))
+  WHERE id = NEW.id;
 END$$
 DELIMITER ;
 
--- TRIGGER: Al actualizar una tarea
-DELIMITER $$
-CREATE TRIGGER trg_after_update_task
-AFTER UPDATE ON tasks
-FOR EACH ROW
-BEGIN
-    IF OLD.status != NEW.status THEN
-        IF OLD.status = 0 THEN
-            UPDATE topics SET todo_count = todo_count - 1 WHERE id = NEW.topics_id;
-        ELSE
-            UPDATE topics SET done_count = done_count - 1 WHERE id = NEW.topics_id;
-        END IF;
+-- Tabla de transacciones (historial)
+CREATE TABLE transactions (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  transaction_type ENUM('recarga', 'pago_transmilenio', 'pago_bicicleta', 'pago_parqueadero') NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  balance_before DECIMAL(10, 2) NOT NULL,
+  balance_after DECIMAL(10, 2) NOT NULL,
+  service_details VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
-        IF NEW.status = 0 THEN
-            UPDATE topics SET todo_count = todo_count + 1 WHERE id = NEW.topics_id;
-        ELSE
-            UPDATE topics SET done_count = done_count + 1 WHERE id = NEW.topics_id;
-        END IF;
-    END IF;
-END$$
-DELIMITER ;
+-- Tabla de tarifas (para tener centralizado)
+CREATE TABLE rates (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  service_name VARCHAR(50) NOT NULL,
+  base_rate DECIMAL(10, 2) NOT NULL,
+  subsidized_discount DECIMAL(3, 2) DEFAULT 0.00, -- 0.25 para 25%, 0.20 para 20%
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
--- TRIGGER: Al eliminar una tarea
-DELIMITER $$
-CREATE TRIGGER trg_after_delete_task
-AFTER DELETE ON tasks
-FOR EACH ROW
-BEGIN
-    IF OLD.status = 0 THEN
-        UPDATE topics SET todo_count = todo_count - 1 WHERE id = OLD.topics_id;
-    ELSE
-        UPDATE topics SET done_count = done_count - 1 WHERE id = OLD.topics_id;
-    END IF;
-END$$
-DELIMITER ;
+-- Insertar tarifas iniciales
+INSERT INTO rates (service_name, base_rate, subsidized_discount) VALUES
+('transmilenio', 3000.00, 0.25),
+('bicicleta', 5000.00, 0.20),
+('parqueadero', 4000.00, 0.15);

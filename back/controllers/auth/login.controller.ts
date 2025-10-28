@@ -12,6 +12,12 @@ const login = async ({ body, set }: { body: any; set: any }) => {
   const { email, password } = body;
 
   try {
+    // Validar campos requeridos
+    if (!email || !password) {
+      set.status = 400;
+      return { message: "Email and password are required" };
+    }
+
     const connection = await db;
     const query = "SELECT * FROM users WHERE email = ?";
     const [user]: any = await connection.execute(query, [email]);
@@ -21,7 +27,14 @@ const login = async ({ body, set }: { body: any; set: any }) => {
       return { message: "User not found" };
     }
 
-    const hashedPassword = user[0].password;
+    // Verificar si el usuario está activo
+    if (!user[0].is_active) {
+      set.status = 403;
+      return { message: "Account is inactive" };
+    }
+
+    // Intentar con password_hash primero, si no existe usar password
+    const hashedPassword = user[0].password_hash || user[0].password;
     const isMatch = await bcryptjs.compare(password, hashedPassword);
 
     if (!isMatch) {
@@ -42,8 +55,11 @@ const login = async ({ body, set }: { body: any; set: any }) => {
       token,
       userInfo: {
         id: user[0].id,
-        name: user[0].name,
+        card_number: user[0].card_number,
+        full_name: user[0].full_name,
         email: user[0].email,
+        user_type: user[0].user_type,
+        balance: user[0].balance,
       },
     };
   } catch (error) {
