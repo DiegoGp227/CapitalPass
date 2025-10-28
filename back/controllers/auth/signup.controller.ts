@@ -69,9 +69,15 @@ const signup = async ({ body, set }: { body: any; set: any }) => {
     ]);
 
     const userId = result.insertId;
-    
+
     // Generar card_number manualmente (más confiable que esperar a la columna computada)
     const card_number = `1000${userId.toString().padStart(6, '0')}`;
+
+    // Actualizar el card_number en la base de datos
+    await connection.execute(
+      "UPDATE users SET card_number = ? WHERE id = ?",
+      [card_number, userId]
+    );
 
     // Generar token JWT
     const token = jwt.sign(

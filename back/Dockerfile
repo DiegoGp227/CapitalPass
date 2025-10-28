@@ -11,8 +11,8 @@ RUN bun install
 # Copia el resto del código
 COPY . .
 
-# Expone el puerto (ajústalo si usas otro)
-EXPOSE 3000
+# Expone el puerto del backend
+EXPOSE 4000
 
 # Comando para iniciar el backend
 CMD ["bun", "run", "dev"]

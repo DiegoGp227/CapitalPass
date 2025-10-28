@@ -1,6 +1,7 @@
+-- Tabla principal de usuarios
 CREATE TABLE users (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  card_number VARCHAR(20) UNIQUE NOT NULL,
+  card_number VARCHAR(20) UNIQUE DEFAULT NULL,
   full_name VARCHAR(100) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
@@ -10,28 +11,6 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) AUTO_INCREMENT=1000;
-
--- Trigger para generar automáticamente el card_number basado en el ID
-DELIMITER $$
-CREATE TRIGGER generate_card_number
-BEFORE INSERT ON users
-FOR EACH ROW
-BEGIN
-  IF NEW.card_number IS NULL THEN
-    -- Se generará después del INSERT, en el trigger AFTER
-    SET NEW.card_number = 'TEMP';
-  END IF;
-END$$
-
-CREATE TRIGGER update_card_number
-AFTER INSERT ON users
-FOR EACH ROW
-BEGIN
-  UPDATE users
-  SET card_number = CONCAT('1000', LPAD(NEW.id, 6, '0'))
-  WHERE id = NEW.id;
-END$$
-DELIMITER ;
 
 -- Tabla de transacciones (historial)
 CREATE TABLE transactions (

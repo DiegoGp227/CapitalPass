@@ -42,7 +42,7 @@ services:
       - capitalpass_network
 
   frontend:
-    build: ./front/capital_pass
+    build: ./front
     container_name: capitalpass_frontend
     restart: always
     depends_on:
