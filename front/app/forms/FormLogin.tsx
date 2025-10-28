@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import Image from "next/image";
 import TrasmiImage from "../../public/image/capitalpass.png";
 import { useRouter } from "next/navigation";
-import Button from "../components/atoms/Button";
+import Button from "@/app/components/atoms/Button";
 interface FormLoginProps {
   setStateNew: () => void;
 }
@@ -28,8 +28,8 @@ const FormLogin = ({ setStateNew }: FormLoginProps) => {
     <>
       <form
         action=""
-        onSubmit={handleSubmit(handleOnSubmit)}
-        className="flex flex-col md:justify-center md:items-center w-full p-8 rounded-3xl shadow-2xl z-10 bg-white h-full md:w-1/3"
+        onSubmit={handleSubmit(()=>{handleOnSubmit})}
+        className="flex flex-col justify-center items-center w-full p-8 rounded-3xl shadow-2xl z-10 bg-white"
       >
         <Image
           src={TrasmiImage}
@@ -48,7 +48,7 @@ const FormLogin = ({ setStateNew }: FormLoginProps) => {
               required: { value: true, message: "Name is required" },
             })}
           />
-          <p className="text-red-400 text-center">{errors.name?.message}</p>
+          <p className="text-red-400 text-center">{errors.name?.message as string}</p>
           <input
             className="border-green-300 w-full border-2 rounded-2xl p-3 focus:outline-none focus:border-green-500"
             placeholder="password"
@@ -57,7 +57,7 @@ const FormLogin = ({ setStateNew }: FormLoginProps) => {
               required: { value: true, message: "Password is required" },
             })}
           />
-          <p className="text-red-400 text-center">{errors.password?.message}</p>
+          <p className="text-red-400 text-center">{errors.password?.message as string}</p>
         </div>
 
         <Button
