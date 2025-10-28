@@ -37,7 +37,7 @@ services:
       TOKEN_EXPIRATION: ${TOKEN_EXPIRATION}
       API_KEY: ${API_KEY}
     ports:
-      - "4000:${PORT}"
+      - "4002:${PORT}"
     networks:
       - capitalpass_network
 
@@ -50,7 +50,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
-      - "3000:3000"
+      - "5002:3000"
     networks:
       - capitalpass_network
 
