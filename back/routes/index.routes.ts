@@ -12,9 +12,11 @@ import updateProfile from "../controllers/users/updateProfile.controller";
 // Balance controllers
 import getBalance from "../controllers/balance/getBalance.controller";
 import recharge from "../controllers/balance/recharge.controller";
+import rechargeByCard from "../controllers/balance/rechargeByCard.controller";
 
 // Transaction controllers
 import pay from "../controllers/transactions/pay.controller";
+import payByCard from "../controllers/transactions/payByCard.controller";
 import getTransactions from "../controllers/transactions/getTransactions.controller";
 
 // Rates controllers
@@ -62,4 +64,8 @@ export const router = new Elysia({ prefix: "/api" })
   })
 
   // Rates (sin protección, público)
-  .get("/rates", getRates);
+  .get("/rates", getRates)
+
+  // Rutas públicas para operaciones con tarjeta (sin autenticación)
+  .post("/public/recharge", rechargeByCard)
+  .post("/public/pay", payByCard);
