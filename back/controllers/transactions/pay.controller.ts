@@ -11,10 +11,10 @@ const pay = async ({ user, body, set }: any) => {
       return { message: "Invalid service type" };
     }
 
-    const connection = await db;
+    const pool = await db;
 
     // Obtener usuario con su tipo
-    const [userResult]: any = await connection.execute(
+    const [userResult]: any = await pool.execute(
       "SELECT balance, user_type FROM users WHERE id = ?",
       [user.id]
     );
@@ -33,7 +33,7 @@ const pay = async ({ user, body, set }: any) => {
       'pago_parqueadero': 'parqueadero'
     };
 
-    const [rateResult]: any = await connection.execute(
+    const [rateResult]: any = await pool.execute(
       "SELECT base_rate, subsidized_discount FROM rates WHERE service_name = ?",
       [serviceMap[service_type]]
     );
@@ -60,10 +60,13 @@ const pay = async ({ user, body, set }: any) => {
     const balanceBefore = parseFloat(balance);
     const balanceAfter = balanceBefore - amount;
 
-    // Iniciar transacción
-    await connection.beginTransaction();
+    // Obtener una conexión del pool para la transacción
+    const connection = await pool.getConnection();
 
     try {
+      // Iniciar transacción
+      await connection.beginTransaction();
+
       // Actualizar balance
       await connection.execute(
         "UPDATE users SET balance = ? WHERE id = ?",
@@ -77,6 +80,7 @@ const pay = async ({ user, body, set }: any) => {
       );
 
       await connection.commit();
+      connection.release();
 
       set.status = 200;
       return {
@@ -87,6 +91,7 @@ const pay = async ({ user, body, set }: any) => {
       };
     } catch (error) {
       await connection.rollback();
+      connection.release();
       throw error;
     }
   } catch (error) {

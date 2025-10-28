@@ -9,10 +9,10 @@ const recharge = async ({ user, body, set }: any) => {
       return { message: "Amount must be greater than 0" };
     }
 
-    const connection = await db;
+    const pool = await db;
 
     // Obtener balance actual
-    const [userResult]: any = await connection.execute(
+    const [userResult]: any = await pool.execute(
       "SELECT balance FROM users WHERE id = ?",
       [user.id]
     );
@@ -25,10 +25,13 @@ const recharge = async ({ user, body, set }: any) => {
     const balanceBefore = userResult[0].balance;
     const balanceAfter = parseFloat(balanceBefore) + parseFloat(amount);
 
-    // Iniciar transacción
-    await connection.beginTransaction();
+    // Obtener una conexión del pool para la transacción
+    const connection = await pool.getConnection();
 
     try {
+      // Iniciar transacción
+      await connection.beginTransaction();
+
       // Actualizar balance
       await connection.execute(
         "UPDATE users SET balance = ? WHERE id = ?",
@@ -42,6 +45,7 @@ const recharge = async ({ user, body, set }: any) => {
       );
 
       await connection.commit();
+      connection.release();
 
       set.status = 200;
       return {
@@ -50,6 +54,7 @@ const recharge = async ({ user, body, set }: any) => {
       };
     } catch (error) {
       await connection.rollback();
+      connection.release();
       throw error;
     }
   } catch (error) {
