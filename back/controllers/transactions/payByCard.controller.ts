@@ -16,10 +16,10 @@ const payByCard = async ({ body, set }: any) => {
       return { message: "Invalid service type" };
     }
 
-    const connection = await db;
+    const pool = await db;
 
     // Obtener usuario por número de tarjeta
-    const [userResult]: any = await connection.execute(
+    const [userResult]: any = await pool.execute(
       "SELECT id, balance, user_type, card_number FROM users WHERE card_number = ? AND is_active = true",
       [card_number]
     );
@@ -39,7 +39,7 @@ const payByCard = async ({ body, set }: any) => {
       'pago_parqueadero': 'parqueadero'
     };
 
-    const [rateResult]: any = await connection.execute(
+    const [rateResult]: any = await pool.execute(
       "SELECT base_rate, subsidized_discount FROM rates WHERE service_name = ?",
       [serviceMap[service_type]]
     );
@@ -66,10 +66,13 @@ const payByCard = async ({ body, set }: any) => {
     const balanceBefore = parseFloat(balance);
     const balanceAfter = balanceBefore - amount;
 
-    // Iniciar transacción
-    await connection.beginTransaction();
+    // Obtener una conexión del pool para la transacción
+    const connection = await pool.getConnection();
 
     try {
+      // Iniciar transacción
+      await connection.beginTransaction();
+
       // Actualizar balance
       await connection.execute(
         "UPDATE users SET balance = ? WHERE id = ?",
@@ -83,6 +86,7 @@ const payByCard = async ({ body, set }: any) => {
       );
 
       await connection.commit();
+      connection.release();
 
       set.status = 200;
       return {
@@ -94,6 +98,7 @@ const payByCard = async ({ body, set }: any) => {
       };
     } catch (error) {
       await connection.rollback();
+      connection.release();
       throw error;
     }
   } catch (error) {
