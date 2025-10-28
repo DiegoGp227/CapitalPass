@@ -2,7 +2,7 @@ import "../styles/global.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SWRProvider } from "../provider/swrProvider";
-import Header from "./dashboard/components/orgamins/Header";
+import ConditionalHeader from "./components/ConditionalHeader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Taskly app",
 };
 
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,7 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-hard-gray min-h-screen flex flex-col`}
       >
         <SWRProvider>
-          <Header />
+          <ConditionalHeader />
           <div className="max-w-screen-2xl mx-auto flex-1 w-full">
             {children}
           </div>

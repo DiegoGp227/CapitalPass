@@ -1,4 +1,3 @@
-import Header from "./components/orgamins/Header";
 import History from "./components/orgamins/History";
 
 const Page = () => {
