@@ -4,7 +4,6 @@ import History from "./components/orgamins/History";
 const Page = () => {
   return (
     <>
-      <Header />
       <div>
         <History />
       </div>
